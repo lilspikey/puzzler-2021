@@ -2,6 +2,7 @@
 
 import argparse
 import re
+from collections import defaultdict
 from random import sample 
 
 
@@ -27,6 +28,32 @@ def scramble(args):
     print(''.join(scrambled))
 
 
+def _word_letters(word):
+    return ''.join(sorted(word))
+
+
+def _hamming_dist(word1, word2):
+    return sum(1 for (a, b) in zip(word1, word2) if a != b)
+
+
+def descramble(args):
+    words_by_letters = defaultdict(list)
+    for word in args.words_file:
+        word = word.strip().lower()
+        words_by_letters[_word_letters(word)].append(word)
+    choices = []
+    for m in NON_WORD_WORD.finditer(args.text):
+        non_word, word = m.groups()
+        if non_word:
+            choices.append(non_word)
+        if word:
+            word = word.lower()
+            word_choices = words_by_letters.get(_word_letters(word), [word])
+            chosen = min(word_choices, key=lambda choice: _hamming_dist(word, choice))
+            choices.append(chosen)
+    print(''.join(choices))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -36,6 +63,12 @@ if __name__ == '__main__':
     scramble_parser.set_defaults(command=scramble)
     scramble_parser.add_argument('--amount', type=float, default=0.5)
     scramble_parser.add_argument('text')
+
+
+    descramble_parser = subparsers.add_parser('descramble')
+    descramble_parser.set_defaults(command=descramble)
+    descramble_parser.add_argument('--words-file', type=argparse.FileType('r'), default='/usr/share/dict/words')
+    descramble_parser.add_argument('text')
 
     args = parser.parse_args()
    
