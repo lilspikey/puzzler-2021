@@ -49,6 +49,7 @@ def _hamming_dist(word1, word2):
 
 
 def dehamming(args):
+    verbose('Original:', args.text)
     words_by_letters = _words_by_letters_index(args.words_file)
     choices = []
     for m in NON_WORD_WORD.finditer(args.text):
@@ -84,6 +85,7 @@ def _match(bigram_frequencies, prev, choices):
 
 
 def debigram(args):
+    verbose('Original:', args.text)
     bigram_frequencies = json.load(args.model_file)
     words = set()
     for bigram in bigram_frequencies:
@@ -164,6 +166,7 @@ def make_model(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', action='store_true')
 
     subparsers = parser.add_subparsers(dest='command', required=True)
 
@@ -187,6 +190,12 @@ if __name__ == '__main__':
     make_model_parser.set_defaults(command=make_model)
 
     args = parser.parse_args()
-   
+
+    if args.verbose:
+        verbose = print
+    else:
+        def verbose(*arg, **kw):
+            pass
+
     args.command(args)
 
