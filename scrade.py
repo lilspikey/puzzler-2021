@@ -11,6 +11,7 @@ from random import sample
 
 NON_WORD_WORD = re.compile(r'(\W*)(\w*)')
 HTML_TAG = re.compile(r'(<.>)')
+SINGLE_UPPER_CASE = re.compile(r'[^A-Z]*([A-Z])[^A-Z]*')
 
 
 def scramble_word(word, amount):
@@ -44,6 +45,20 @@ def _words_by_letters_index(words):
     return words_by_letters
 
 
+def _get_words_from_letters(words_by_letters, word):
+    letters = _word_letters(word.lower())
+    words = words_by_letters.get(letters, [])
+    m = SINGLE_UPPER_CASE.match(word)
+    if m:
+        letter = m.group(1).lower()
+        starting = [w for w in words if w.startswith(letter)]
+        if starting:
+            words = starting
+    if not words:
+        words = [word.lower()]
+    return words
+
+
 def _hamming_dist(word1, word2):
     return sum(1 for (a, b) in zip(word1, word2) if a != b)
 
@@ -57,8 +72,7 @@ def dehamming(args):
         if non_word:
             choices.append(non_word)
         if word:
-            word = word.lower()
-            word_choices = words_by_letters.get(_word_letters(word), [word])
+            word_choices = _get_words_from_letters(words_by_letters, word)
             chosen = min(word_choices, key=lambda choice: _hamming_dist(word, choice))
             choices.append(chosen)
     print(''.join(choices))
@@ -100,8 +114,7 @@ def debigram(args):
         if non_word:
             tokens.append(non_word)
         if word:
-            word = word.lower()
-            word_choices = words_by_letters.get(_word_letters(word), [word])
+            word_choices = _get_words_from_letters(words_by_letters, word)
             choices.append(tuple(word_choices))
             tokens.append(None)
     _, chosen_words = _match(bigram_frequencies, '<START>', tuple(choices))
