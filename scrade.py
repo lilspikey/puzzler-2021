@@ -85,6 +85,19 @@ def dehamming(args):
 
 
 
+def memoize_matches(fn):
+    _cache = {}
+    def _decorated(bigram_frequencies, prev, choices):
+        key = (prev, choices)
+        results = _cache.get(key, None)
+        if results is None:
+            results = fn(bigram_frequencies, prev, choices)
+            _cache[key] = results
+        return results
+    return _decorated
+
+
+@memoize_matches
 def _match(bigram_frequencies, prev, choices):
     if choices:
         head, tail = choices[0], choices[1:]
@@ -182,6 +195,7 @@ def debigram(args):
             tokens.append(None)
 
     words_by_letters = model.words_by_letters(words)
+    verbose('Model loaded')
     choices = [tuple(_get_words_from_letters(words_by_letters, word)) for word in words]
     bigram_frequencies = model.bigram_frequencies(choices)
 

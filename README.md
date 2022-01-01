@@ -56,8 +56,9 @@ aliens is a 1968 science fiction action film written and directed by james camer
 
 It works reasonably well - though Aliens was released in 1986 not 1968.
 
-I think for larger text I'd need to add in some memoisation, as it's basically doing a dynamic programming style search, but the possible
-anagrams for a given word are normally fairly small, which means the combinations we need to search aren't so bad
+~~I think for larger text I'd need to add in some memoisation, as it's basically doing a dynamic programming style search, but the possible
+anagrams for a given word are normally fairly small, which means the combinations we need to search aren't so bad~~ Adding memoisation sped
+up the matching nicely.
 
 Also both of these don't work if they don't have a word in their dictionary/bigrams and will simply leave it untouched.
 
