@@ -22,6 +22,7 @@ def scramble_word(word, amount):
 
 
 def scramble(args):
+    '''Scramble the words in the provided text'''
     amount = args.amount
     scrambled = []
     for m in NON_WORD_WORD.finditer(args.text):
@@ -64,6 +65,11 @@ def _hamming_dist(word1, word2):
 
 
 def dehamming(args):
+    '''
+    Attempt to descramble the words in provided text using a simple
+    dictionary lookup, then a comparison based on the hamming distance
+    of matching words to the scrambled word.
+    '''
     verbose('Original:', args.text)
     words_by_letters = _words_by_letters_index(args.words_file)
     choices = []
@@ -99,7 +105,17 @@ def _match(bigram_frequencies, prev, choices):
 
 
 def debigram(args):
+    '''
+    Attempt to descramble the words in the provided text using a dictionary
+    lookup, then find the best match for the combinations of words based on
+    bigram frequencies. e.g. so "tbu htat" would tend to match "but that"
+    instead of "tub that".
+    '''
     verbose('Original:', args.text)
+    # this data file is quite large and takes a few seconds to load
+    # potentially we could use a sqlite db and just pull in what we
+    # need to, but that adds more complication than what I can be
+    # bothered with
     bigram_frequencies = json.load(args.model_file)
     words = set()
     for bigram in bigram_frequencies:
@@ -139,7 +155,6 @@ def _load_sentence(sentence):
 
 
 def _load_doc(doc):
-    ''' https://www.corpusdata.org/iweb_samples.asp '''
     for line in doc:
         line = line.strip()
         if line:
@@ -171,10 +186,20 @@ def _load_corpuses(corpus_zips):
 
 
 def make_model(args):
+    '''
+    Make JSON containing bigram frequencies from the provided corpuses.
+    Corpus data can be downloaded in zip format from https://www.corpusdata.org/iweb_samples.asp
+    '''
     bigram_frequencies = Counter()
     for bigram in _load_corpuses(args.corpus_zip):
         bigram_frequencies[':'.join(bigram)] += 1
     print(json.dumps(bigram_frequencies))
+
+
+def _add_subcommand(subparsers, name, fn):
+    parser = subparsers.add_parser(name, description=fn.__doc__)
+    parser.set_defaults(command=fn)
+    return parser
 
 
 if __name__ == '__main__':
@@ -183,24 +208,20 @@ if __name__ == '__main__':
 
     subparsers = parser.add_subparsers(dest='command', required=True)
 
-    scramble_parser = subparsers.add_parser('scramble')
-    scramble_parser.set_defaults(command=scramble)
+    scramble_parser = _add_subcommand(subparsers, 'scramble', scramble)
     scramble_parser.add_argument('--amount', type=float, default=0.5)
     scramble_parser.add_argument('text')
 
-    dehamming_parser = subparsers.add_parser('descramble-hamming')
-    dehamming_parser.set_defaults(command=dehamming)
+    dehamming_parser = _add_subcommand(subparsers, 'descramble-hamming', dehamming)
     dehamming_parser.add_argument('--words-file', type=argparse.FileType('r'), default='/usr/share/dict/words')
     dehamming_parser.add_argument('text')
 
-    debigram_parser = subparsers.add_parser('descramble-bigram')
-    debigram_parser.set_defaults(command=debigram)
+    debigram_parser = _add_subcommand(subparsers, 'descramble-bigram', debigram)
     debigram_parser.add_argument('--model-file', type=argparse.FileType('r'), required=True)
     debigram_parser.add_argument('text')
 
-    make_model_parser = subparsers.add_parser('make-model')
+    make_model_parser = _add_subcommand(subparsers, 'make-model', make_model)
     make_model_parser.add_argument('corpus_zip', nargs='+', type=argparse.FileType('rb'))
-    make_model_parser.set_defaults(command=make_model)
 
     args = parser.parse_args()
 
