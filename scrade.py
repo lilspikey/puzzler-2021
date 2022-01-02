@@ -104,7 +104,7 @@ def _match(bigram_frequencies, prev, choices):
         best_score = 0.0
         best_choices = None
         for choice in head:
-            bigram = '{}:{}'.format(prev, choice)
+            bigram = (prev, choice)
             freq = bigram_frequencies.get(bigram, 0.5)
             tail_score, tail_choices = _match(bigram_frequencies, choice, tail)
             score = tail_score * freq
@@ -113,7 +113,7 @@ def _match(bigram_frequencies, prev, choices):
                 best_choices = (choice,) + tail_choices
         return (best_score, best_choices)
     else:
-        bigram = '{}:<END>'.format(prev)
+        bigram = (prev, '<END>')
         freq = bigram_frequencies.get(bigram, 0.5)
         return (freq, ())
 
@@ -197,6 +197,7 @@ def debigram(args):
     words_by_letters = model.words_by_letters(words)
     verbose('Model loaded')
     choices = [tuple(_get_words_from_letters(words_by_letters, word)) for word in words]
+    _visualise_choices(choices)
     bigram_frequencies = model.bigram_frequencies(choices)
 
     _, chosen_words = _match(bigram_frequencies, '<START>', tuple(choices))
@@ -206,6 +207,19 @@ def debigram(args):
             tokens[i] = chosen_words[next_word]
             next_word += 1
     print(''.join(tokens))
+
+
+def _visualise_choices(choices):
+    max_len = max(len(choice) for choice in choices)
+    for i in range(max_len):
+        row = []
+        for choice in choices:
+            if i < len(choice):
+                row.append(choice[i])
+            else:
+                row.append(' ' * len(choice[0]))
+        verbose(' '.join(row))
+    verbose()
 
 
 def _load_sentence(terms, sentence):
